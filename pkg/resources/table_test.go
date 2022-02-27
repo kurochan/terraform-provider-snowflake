@@ -129,6 +129,20 @@ func TestTableRead(t *testing.T) {
 	})
 }
 
+func TestTableUpdate(t *testing.T) {
+	r := require.New(t)
+
+	d := table(t, "database_name|schema_name|old_name", map[string]interface{}{"name": "good_name"})
+
+	WithMockDb(t, func(db *sql.DB, mock sqlmock.Sqlmock) {
+		expectTableRead(mock)
+		mock.ExpectExec(`ALTER TABLE "database_name"."schema_name"."old_name" RENAME TO "good_name"`).WillReturnResult(sqlmock.NewResult(1, 1))
+		mock.ExpectExec(`ALTER TABLE "database_name"."schema_name"."good_name" SET DATA_RETENTION_TIME_IN_DAYS = 1`).WillReturnResult(sqlmock.NewResult(1, 1))
+		err := resources.UpdateTable(d, db)
+		r.NoError(err)
+	})
+}
+
 func TestTableDelete(t *testing.T) {
 	r := require.New(t)
 

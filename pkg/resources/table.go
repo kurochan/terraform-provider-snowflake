@@ -22,7 +22,6 @@ var tableSchema = map[string]*schema.Schema{
 	"name": {
 		Type:        schema.TypeString,
 		Required:    true,
-		ForceNew:    true,
 		Description: "Specifies the identifier for the table; must be unique for the database and schema in which the table is created.",
 	},
 	"schema": {
@@ -596,6 +595,18 @@ func UpdateTable(d *schema.ResourceData, meta interface{}) error {
 	builder := snowflake.Table(tableName, dbName, schema)
 
 	db := meta.(*sql.DB)
+	if d.HasChange("name") {
+		newName := d.Get("name").(string)
+		q := builder.Rename(newName)
+		err := snowflake.Exec(db, q)
+		if err != nil {
+			return errors.Wrapf(err, "error renaming table %s to %s", dbName, newName)
+		}
+		d.SetId(fmt.Sprintf("%s|%s|%s", dbName, schema, newName))
+		// reconfigure builder because table name is modified
+		builder = snowflake.Table(newName, dbName, schema)
+	}
+
 	if d.HasChange("comment") {
 		comment := d.Get("comment")
 		q := builder.ChangeComment(comment.(string))

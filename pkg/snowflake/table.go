@@ -519,6 +519,11 @@ func (tb *TableBuilder) Create() string {
 	return q.String()
 }
 
+// Rename returns the SQL query that will rename the table.
+func (sb *TableBuilder) Rename(newName string) string {
+	return fmt.Sprintf(`ALTER TABLE %v RENAME TO "%v"`, sb.QualifiedName(), newName)
+}
+
 // ChangeClusterBy returns the SQL query to change cluastering on table
 func (tb *TableBuilder) ChangeClusterBy(cb string) string {
 	return fmt.Sprintf(`ALTER TABLE %v CLUSTER BY LINEAR(%v)`, tb.QualifiedName(), cb)
